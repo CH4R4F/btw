@@ -1,12 +1,16 @@
 const { getUserFromToken } = require("../logic/user");
 
-async function requireAuth(req, res, next) {
-    const loginToken = req.cookies[process.env.BTW_UUID_KEY || "btw_uuid"];
-    const user = await getUserFromToken({ token: loginToken });
-    if (!user) return res.status(401).json({ success: false, error: "Unauthorized" });
-    req.user = user;
-    next();
+function _makeRequireAuth(getUserFn) {
+    return async function requireAuth(req, res, next) {
+        const loginToken = req.cookies[process.env.BTW_UUID_KEY || "btw_uuid"];
+        const user = await getUserFn({ token: loginToken });
+        if (!user) return res.status(401).json({ success: false, error: "Unauthorized" });
+        req.user = user;
+        next();
+    };
 }
+
+const requireAuth = _makeRequireAuth(getUserFromToken);
 
 async function requirePlatformAdmin(req, res, next) {
     const adminEmails = (process.env.ADMIN_EMAILS || "").split(",").map((e) => e.trim()).filter(Boolean);
@@ -19,4 +23,4 @@ async function requirePlatformAdmin(req, res, next) {
     next();
 }
 
-module.exports = { requireAuth, requirePlatformAdmin };
+module.exports = { requireAuth, requirePlatformAdmin, _makeRequireAuth };

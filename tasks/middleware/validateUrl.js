@@ -44,21 +44,25 @@ async function validateUrl(urlString) {
     }
 
     const hostname = parsed.hostname;
+    // URL parser keeps brackets around IPv6 literals (e.g. "[::1]") — strip them
+    const host = hostname.startsWith("[") && hostname.endsWith("]")
+        ? hostname.slice(1, -1)
+        : hostname;
 
-    if (net.isIPv4(hostname)) {
-        if (isBlockedIPv4(hostname)) throw new Error("URL resolves to a blocked address");
+    if (net.isIPv4(host)) {
+        if (isBlockedIPv4(host)) throw new Error("URL resolves to a blocked address");
         return;
     }
 
-    if (net.isIPv6(hostname)) {
-        if (isBlockedIPv6(hostname)) throw new Error("URL resolves to a blocked address");
+    if (net.isIPv6(host)) {
+        if (isBlockedIPv6(host)) throw new Error("URL resolves to a blocked address");
         return;
     }
 
     // DNS resolution — validate the resolved IP, not just the hostname string
     let addresses;
     try {
-        addresses = await dns.resolve(hostname);
+        addresses = await dns.resolve(host);
     } catch {
         throw new Error("Could not resolve hostname");
     }

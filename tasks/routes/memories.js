@@ -3,18 +3,7 @@ var router = express.Router();
 var cors = require("cors");
 var { getUserFromToken } = require("../logic/user");
 var { getMemories, getPublicMemories, addMemory, updateMemory, deleteMemory } = require("../logic/memories");
-
-function validatePhotoUrls(urls) {
-    if (!Array.isArray(urls)) return [];
-    return urls.filter((u) => {
-        try {
-            const parsed = new URL(u);
-            return parsed.protocol === "https:";
-        } catch {
-            return false;
-        }
-    });
-}
+var { validatePhotoUrls } = require("../middleware/validatePhotoUrls");
 
 // POST /memories/get - Get all memories for authenticated user
 router.options(
