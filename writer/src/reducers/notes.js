@@ -336,10 +336,15 @@ export default {
         const query = payload.query;
         let results = JSON.parse(JSON.stringify(fuse.search(query)));
 
+        // Escape HTML special chars before injecting <mark> tags.
+        // Only <mark> can ever appear in the output — nothing from user content.
+        const ESC = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+        const escChar = (c) => ESC[c] || c;
+
         var highlighter = function (matchedItem, indices) {
           var text = matchedItem;
           var result = [];
-          var matches = [].concat(indices); // limpar referencia
+          var matches = [].concat(indices);
           var pair = matches.shift();
 
           for (var i = 0; i < text.length; i++) {
@@ -347,15 +352,13 @@ export default {
             if (pair && i == pair[0]) {
               result.push("<mark>");
             }
-            result.push(char);
+            result.push(escChar(char));
             if (pair && i == pair[1]) {
               result.push("</mark>");
               pair = matches.shift();
             }
           }
-          var highlight = result.join("");
-
-          return highlight;
+          return result.join("");
         };
 
         // convert results.matches to a <mark> highlighted string
@@ -371,7 +374,7 @@ export default {
             ]);
             result.item.highlightedTitle = highlightedTitle;
           } else {
-            result.item.highlightedTitle = title;
+            result.item.highlightedTitle = title.replace(/[&<>"']/g, escChar);
           }
 
           if (mdMatch !== -1) {
@@ -390,7 +393,7 @@ export default {
             result.item.highlightedMdShort = highlightedMdShort;
           } else {
             // first 42 chars of content
-            const highlightedMd = (md || "").substring(0, 42);
+            const highlightedMd = (md || "").substring(0, 42).replace(/[&<>"']/g, escChar);
             result.item.highlightedMd = highlightedMd;
           }
         });

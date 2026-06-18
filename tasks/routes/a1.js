@@ -18,14 +18,14 @@ router.options(
     "/thread/telegram/fetch",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
 );
 router.post(
     "/thread/telegram/fetch",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
         let {

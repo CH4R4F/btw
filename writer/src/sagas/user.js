@@ -25,39 +25,20 @@ import {
   resetState,
 } from "actions";
 
-import axios from "axios";
-const axiosInstance = axios.create({
-  timeout: 20000,
-  withCredentials: true,
-});
-
-import genFingerprint from "../fingerprint";
-
-// import FingerprintJS from '@fingerprintjs/fingerprintjs';
-
-async function getFingerPrint() {
-  return genFingerprint();
-  // const fp = await FingerprintJS.load();
-
-  // const { visitorId } = await fp.get();
-
-  // return visitorId;
-}
+import api from "../api";
 
 export function* getUserSaga() {
   // do a fetch call to process.env.REACT_APP_TASKS_PUBLIC_URL
   // const response = yield call(fetch, 'https://jsonplaceholder.typicode.com/todos/1');
   // const data = yield response.json();
 
-  const fingerprint = yield call(getFingerPrint);
 
   try {
     const { data: res } = yield call(() =>
-      axiosInstance.request({
+      api.request({
         url: `${process.env.REACT_APP_TASKS_PUBLIC_URL}/user/details`,
         method: "POST",
         data: {
-          fingerprint,
         },
       })
     );
@@ -87,17 +68,15 @@ export function* getUserSaga() {
 }
 
 export function* generateOtp({ payload }) {
-  const fingerprint = yield call(getFingerPrint);
   const { email } = payload || {};
 
   try {
     const { data } = yield call(() =>
-      axiosInstance.request({
+      api.request({
         url: `${process.env.REACT_APP_TASKS_PUBLIC_URL}/otp/generate`,
         method: "POST",
         data: {
           email,
-          fingerprint,
         },
       })
     );
@@ -117,18 +96,16 @@ export function* generateOtp({ payload }) {
 }
 
 export function* verifyOtp({ payload }) {
-  const fingerprint = yield call(getFingerPrint);
   const { email, otp } = payload || {};
 
   try {
     const { data: res } = yield call(() =>
-      axiosInstance.request({
+      api.request({
         url: `${process.env.REACT_APP_TASKS_PUBLIC_URL}/otp/validate`,
         method: "POST",
         data: {
           email,
           otp,
-          fingerprint,
         },
       })
     );
@@ -154,7 +131,6 @@ export function* verifyOtp({ payload }) {
 }
 
 export function* updateUser({ payload }) {
-  const fingerprint = yield call(getFingerPrint);
   const { name, slug, bio, pic, twitter, linkedin, instagram, settings } =
     payload || {};
 
@@ -162,11 +138,10 @@ export function* updateUser({ payload }) {
 
   try {
     const { data: res } = yield call(() =>
-      axiosInstance.request({
+      api.request({
         url: `${process.env.REACT_APP_TASKS_PUBLIC_URL}/user/update`,
         method: "POST",
         data: {
-          fingerprint,
           name,
           slug,
           bio,
@@ -209,7 +184,6 @@ export function* updateUser({ payload }) {
 }
 
 export function* addCustomDomain({ payload }) {
-  const fingerprint = yield call(getFingerPrint);
   const { domain } = payload || {};
   let toastId;
 
@@ -219,11 +193,10 @@ export function* addCustomDomain({ payload }) {
 
   try {
     const { data: res } = yield call(() =>
-      axiosInstance.request({
+      api.request({
         url: `${process.env.REACT_APP_TASKS_PUBLIC_URL}/user/add/domain`,
         method: "POST",
         data: {
-          fingerprint,
           domain,
         },
       })

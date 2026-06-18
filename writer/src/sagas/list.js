@@ -11,16 +11,11 @@ import {
 import { ActionTypes } from "literals";
 
 import axios from "axios";
-const axiosInstance = axios.create({
-  timeout: 20000,
-  withCredentials: true,
-});
+import api from "../api";
 
 const axiosInstanceWithoutCredentials = axios.create({
   timeout: 20000,
 });
-
-import genFingerprint from "../fingerprint";
 import toast from "react-hot-toast";
 import {
   batchPushNodes,
@@ -69,22 +64,11 @@ async function getServerTime({ attempts = 1 }) {
   }
 }
 
-// import FingerprintJS from '@fingerprintjs/fingerprintjs';
-
-async function getFingerPrint() {
-  return genFingerprint();
-  // const fp = await FingerprintJS.load();
-
-  // const { visitorId } = await fp.get();
-
-  // return visitorId;
-}
 
 export function* getListSaga({ payload }) {
   // await on getServerTime
   yield call(getServerTime, { attempts: 1 });
 
-  const fingerprint = yield call(getFingerPrint);
 
   const { after, id } = payload;
 
@@ -105,11 +89,10 @@ export function* getListSaga({ payload }) {
   try {
     while (true) {
       const { data: res } = yield call(() =>
-        axiosInstance.request({
+        api.request({
           url: `${process.env.REACT_APP_TASKS_PUBLIC_URL}/list/get`,
           method: "POST",
           data: {
-            fingerprint,
             after: isInitialFetch ? 0 : after,
             page,
             limit,
@@ -164,7 +147,6 @@ export function* getListSaga({ payload }) {
 }
 
 export function* batchPushNodesSaga({ payload }) {
-  const fingerprint = yield call(getFingerPrint);
 
   const { nodes } = payload;
 
@@ -173,11 +155,10 @@ export function* batchPushNodesSaga({ payload }) {
   try {
     while (true) {
       const { data: res } = yield call(() =>
-        axiosInstance.request({
+        api.request({
           url: `${process.env.REACT_APP_TASKS_PUBLIC_URL}/list/update`,
           method: "POST",
           data: {
-            fingerprint,
             nodes,
           },
         })

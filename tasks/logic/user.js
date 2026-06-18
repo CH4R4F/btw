@@ -391,7 +391,7 @@ async function getUserFromId({ user_id }) {
 }
 
 // function to get users
-async function getUserFromToken({ token, fingerprint }) {
+async function getUserFromToken({ token }) {
     const tasksDB = await db.getTasksDB();
 
     if (
@@ -412,53 +412,32 @@ async function getUserFromToken({ token, fingerprint }) {
     }
 
     if (!token) return null;
-    if (!fingerprint) return null;
 
     const { rows } = await tasksDB.query(
         `SELECT * FROM btw.login_token WHERE uuid = $1`,
         [token]
     );
 
-    if (rows.length > 0) {
-        const loginTokens = rows[0];
+    if (rows.length === 0) return null;
 
-        if (fingerprint && fingerprint == loginTokens.fingerprint) {
-            // get the user of this login token
-            const { rows: users } = await tasksDB.query(
-                `SELECT * FROM btw.users WHERE id = $1`,
-                [loginTokens.user_id]
-            );
+    const loginToken = rows[0];
 
-            if (users.length > 0) {
-                return users[0];
-            } else {
-                // delete the token from DB
-                await tasksDB.query(
-                    `DELETE FROM btw.login_token WHERE uuid = $1`,
-                    [token]
-                );
+    const { rows: users } = await tasksDB.query(
+        `SELECT * FROM btw.users WHERE id = $1`,
+        [loginToken.user_id]
+    );
 
-                return null;
-            }
-        } else {
-            // delete the token from DB
-            await tasksDB.query(`DELETE FROM btw.login_token WHERE uuid = $1`, [
-                token,
-            ]);
+    if (users.length === 0) return null;
 
-            return null;
-        }
-    } else {
-        return null;
-    }
+    return users[0];
 }
 
-async function doesLoginTokenExist({ token, fingerprint }) {
+async function doesLoginTokenExist({ token }) {
     const tasksDB = await db.getTasksDB();
 
     const { rows } = await tasksDB.query(
-        `SELECT * FROM btw.login_token WHERE uuid = $1 AND fingerprint = $2`,
-        [token, fingerprint]
+        `SELECT * FROM btw.login_token WHERE uuid = $1`,
+        [token]
     );
 
     return rows.length > 0;
@@ -748,11 +727,11 @@ async function addUserDomain({ domain, user_id }) {
     }
 }
 
-async function deleteLoginToken({ token, fingerprint }) {
+async function deleteLoginToken({ token }) {
     const tasksDB = await db.getTasksDB();
     await tasksDB.query(
-        `DELETE FROM btw.login_token WHERE uuid = $1 AND fingerprint = $2`,
-        [token, fingerprint]
+        `DELETE FROM btw.login_token WHERE uuid = $1`,
+        [token]
     );
 }
 

@@ -22,14 +22,14 @@ router.options(
     "/import",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.post(
     "/import",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
         let { fingerprint, urls } = req.body || {};
@@ -94,14 +94,14 @@ router.options(
     "/get-by-id",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.post(
     "/get-by-id",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
         const { fingerprint, id } = req.body || {};
@@ -142,14 +142,14 @@ router.options(
     "/get",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.post(
     "/get",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
         const { fingerprint, page = 1, limit = 50, after } = req.body || {};
@@ -227,14 +227,14 @@ router.options(
     "/update/html",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.post(
     "/update/html",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
         const { fingerprint, id, user_id, html } = req.body || {};
@@ -283,14 +283,14 @@ router.options(
     "/update/delete",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.post(
     "/update/delete",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
         const {
@@ -354,14 +354,14 @@ router.options(
     "/update/archive",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.post(
     "/update/archive",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
         const { fingerprint, id, user_id, archive } = req.body || {};
@@ -418,14 +418,14 @@ router.options(
     "/update/private",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.post(
     "/update/private",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
         const { fingerprint, id, user_id, private: privated } = req.body || {};
@@ -482,14 +482,14 @@ router.options(
     "/update/publish",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.post(
     "/update/publish",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
         const { fingerprint, id, user_id, publish } = req.body || {};
@@ -546,14 +546,14 @@ router.options(
     "/update/slug",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.post(
     "/update/slug",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
         const { fingerprint, id, user_id, slug } = req.body || {};

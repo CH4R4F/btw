@@ -18,28 +18,16 @@ import {
   deleteMemoryFailure,
 } from "actions";
 
-import axios from "axios";
-const axiosInstance = axios.create({
-  timeout: 20000,
-  withCredentials: true,
-});
-
-import genFingerprint from "../fingerprint";
-
-async function getFingerPrint() {
-  return genFingerprint();
-}
+import api from "../api";
 
 export function* getMemoriesSaga({ payload }) {
-  const fingerprint = yield call(getFingerPrint);
 
   try {
     const { data: res } = yield call(() =>
-      axiosInstance.request({
+      api.request({
         url: `${process.env.REACT_APP_TASKS_PUBLIC_URL}/memories/get`,
         method: "POST",
         data: {
-          fingerprint,
         },
       })
     );
@@ -63,16 +51,14 @@ export function* getMemoriesSaga({ payload }) {
 }
 
 export function* addMemorySaga({ payload }) {
-  const fingerprint = yield call(getFingerPrint);
   const { memory } = payload;
 
   try {
     const { data: res } = yield call(() =>
-      axiosInstance.request({
+      api.request({
         url: `${process.env.REACT_APP_TASKS_PUBLIC_URL}/memories/add`,
         method: "POST",
         data: {
-          fingerprint,
           memory,
         },
       })
@@ -97,16 +83,14 @@ export function* addMemorySaga({ payload }) {
 }
 
 export function* updateMemorySaga({ payload }) {
-  const fingerprint = yield call(getFingerPrint);
   const { memoryId, memory } = payload;
 
   try {
     const { data: res } = yield call(() =>
-      axiosInstance.request({
+      api.request({
         url: `${process.env.REACT_APP_TASKS_PUBLIC_URL}/memories/update`,
         method: "PUT",
         data: {
-          fingerprint,
           memoryId,
           memory,
         },
@@ -132,16 +116,14 @@ export function* updateMemorySaga({ payload }) {
 }
 
 export function* deleteMemorySaga({ payload }) {
-  const fingerprint = yield call(getFingerPrint);
   const { memoryId } = payload;
 
   try {
     const { data: res } = yield call(() =>
-      axiosInstance.request({
+      api.request({
         url: `${process.env.REACT_APP_TASKS_PUBLIC_URL}/memories/delete`,
         method: "DELETE",
         data: {
-          fingerprint,
           memoryId,
         },
       })

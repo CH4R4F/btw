@@ -17,14 +17,14 @@ router.options(
     "/details",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.post(
     "/details",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
         const { fingerprint } = req.body || {};
@@ -59,11 +59,12 @@ router.post(
                 // set the login token in the cookie on the root domain (so that it can be accessed by all subdomains)
                 res.cookie(process.env.BTW_UUID_KEY || "btw_uuid", loginToken, {
                     maxAge: 1000 * 60 * 60 * 24 * 30,
+                    httpOnly: true,
+                    sameSite: "lax",
                     ...(process.env.NODE_ENV === "production"
                         ? {
                               domain: `.${process.env.ROOT_DOMAIN}`,
                               secure: true,
-                              //   httpOnly: true,
                           }
                         : {}),
                 });
@@ -83,11 +84,12 @@ router.post(
                 if (!loginTokenExists) {
                     // delete the cookie if user is not logged in
                     res.clearCookie(process.env.BTW_UUID_KEY || "btw_uuid", {
+                        httpOnly: true,
+                        sameSite: "lax",
                         ...(process.env.NODE_ENV === "production"
                             ? {
                                   domain: `.${process.env.ROOT_DOMAIN}`,
                                   secure: true,
-                                  //   httpOnly: true,
                               }
                             : {}),
                     });
@@ -119,11 +121,12 @@ router.post(
             } else {
                 // delete the cookie if user is not logged in
                 res.clearCookie(process.env.BTW_UUID_KEY || "btw_uuid", {
+                    httpOnly: true,
+                    sameSite: "lax",
                     ...(process.env.NODE_ENV === "production"
                         ? {
                               domain: `.${process.env.ROOT_DOMAIN}`,
                               secure: true,
-                              //   httpOnly: true,
                           }
                         : {}),
                 });
@@ -138,11 +141,12 @@ router.post(
             console.log(e);
             // delete the cookie if user is not logged in
             res.clearCookie(process.env.BTW_UUID_KEY || "btw_uuid", {
+                httpOnly: true,
+                sameSite: "lax",
                 ...(process.env.NODE_ENV === "production"
                     ? {
                           domain: `.${process.env.ROOT_DOMAIN}`,
                           secure: true,
-                          //   httpOnly: true,
                       }
                     : {}),
             });
@@ -162,14 +166,14 @@ router.options(
     "/update",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.post(
     "/update",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
         const {
@@ -225,14 +229,14 @@ router.options(
     "/add/domain",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.post(
     "/add/domain",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
         const { fingerprint, domain } = req.body || {};
@@ -272,14 +276,14 @@ router.options(
     "/logout",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.post(
     "/logout",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
         const { fingerprint } = req.body || {};
@@ -291,11 +295,12 @@ router.post(
         res.clearCookie(
             process.env.BTW_UUID_KEY || "btw_uuid",
             {
+                httpOnly: true,
+                sameSite: "lax",
                 ...(process.env.NODE_ENV === "production"
                     ? {
                           domain: `.${process.env.ROOT_DOMAIN}`,
                           secure: true,
-                          //   httpOnly: true,
                       }
                     : {}),
             }

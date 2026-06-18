@@ -63,7 +63,6 @@ import CollaborationCursor from "@tiptap/extension-collaboration-cursor";
 
 import * as Y from "yjs";
 import { HocuspocusProvider } from "@hocuspocus/provider";
-import genFingerprint from "../fingerprint";
 import MenuBar from "./TipTapMenuBar";
 import Embed from "./TipTapEmbed";
 import toast from "react-hot-toast";
@@ -115,7 +114,7 @@ class Tiptap extends React.Component {
           props.usecase ? `.${props.usecase}` : ""
         }`,
         document: ydoc,
-        token: `${props.token}:::${genFingerprint()}`,
+        token: props.token,
         onDisconnect: () => {
           if (!window.yjsConnectionToastId) {
             window.yjsConnectionToastId = toast.loading(`Trying to reconnect`);

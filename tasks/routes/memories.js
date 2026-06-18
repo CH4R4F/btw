@@ -4,19 +4,31 @@ var cors = require("cors");
 var { getUserFromToken } = require("../logic/user");
 var { getMemories, getPublicMemories, addMemory, updateMemory, deleteMemory } = require("../logic/memories");
 
+function validatePhotoUrls(urls) {
+    if (!Array.isArray(urls)) return [];
+    return urls.filter((u) => {
+        try {
+            const parsed = new URL(u);
+            return parsed.protocol === "https:";
+        } catch {
+            return false;
+        }
+    });
+}
+
 // POST /memories/get - Get all memories for authenticated user
 router.options(
     "/get",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.post(
     "/get",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
         const { fingerprint } = req.body || {};
@@ -34,8 +46,6 @@ router.post(
 
             // Get memories from database
             const memories = await getMemories(user.id);
-
-            console.log('Returning memories:', JSON.stringify(memories, null, 2));
 
             res.json({
                 success: true,
@@ -62,9 +72,13 @@ router.get(
     async (req, res) => {
         try {
             const { userId } = req.params;
+            const parsedUserId = parseInt(userId, 10);
+            if (!Number.isInteger(parsedUserId) || parsedUserId <= 0 || String(parsedUserId) !== String(userId)) {
+                return res.status(400).json({ success: false, error: "Invalid userId" });
+            }
 
             // Get memories from database
-            const memories = await getPublicMemories(parseInt(userId));
+            const memories = await getPublicMemories(parsedUserId);
 
             res.json({
                 success: true,
@@ -85,14 +99,14 @@ router.options(
     "/add",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.post(
     "/add",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
         const { fingerprint, memory } = req.body || {};
@@ -107,8 +121,6 @@ router.post(
             if (!user) {
                 throw new Error("User not found");
             }
-
-            console.log('Adding memory with data:', JSON.stringify(memory, null, 2));
 
             // Validate required fields
             if (!memory || !memory.place_name || !memory.name) {
@@ -139,12 +151,10 @@ router.post(
                 country_code: memory.country_code,
                 name: memory.name,
                 description: memory.description || null,
-                photo_urls: memory.photo_urls || [],
+                photo_urls: validatePhotoUrls(memory.photo_urls),
                 visited_date: memory.visited_date || null,
                 private: memory.private !== undefined ? memory.private : false,
             });
-
-            console.log('Memory added successfully:', newMemory.id);
 
             res.json({
                 success: true,
@@ -168,14 +178,14 @@ router.options(
     "/update",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.put(
     "/update",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
         const { fingerprint, memoryId, memory } = req.body || {};
@@ -220,7 +230,7 @@ router.put(
                 country_code: memory.country_code,
                 name: memory.name,
                 description: memory.description || null,
-                photo_urls: memory.photo_urls || [],
+                photo_urls: validatePhotoUrls(memory.photo_urls),
                 visited_date: memory.visited_date || null,
                 private: memory.private !== undefined ? memory.private : false,
             });
@@ -250,14 +260,14 @@ router.options(
     "/delete",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.delete(
     "/delete",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
         const { fingerprint, memoryId } = req.body || {};

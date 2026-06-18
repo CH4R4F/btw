@@ -1,6 +1,7 @@
 var express = require("express");
 var router = express.Router();
 var cors = require("cors");
+const crypto = require("crypto");
 var { generateOTP, validateOTP, deleteOTP } = require("../logic/otp");
 var { createUser, createLoginToken } = require("../logic/user");
 var { emailOTP } = require("../logic/email");
@@ -344,16 +345,29 @@ router.options(
     "/webhook",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.post(
     "/webhook",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
+        const sig = req.headers["x-hub-signature-256"];
+        const appSecret = process.env.WHATSAPP_APP_SECRET;
+        if (!sig || !appSecret) {
+            return res.sendStatus(403);
+        }
+        const expected = "sha256=" + crypto
+            .createHmac("sha256", appSecret)
+            .update(req.rawBody)
+            .digest("hex");
+        if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) {
+            return res.sendStatus(403);
+        }
+
         console.log(JSON.stringify(req.body, null, 4));
 
         const sendGreeting = async (chatId) => {
@@ -961,18 +975,17 @@ router.options(
     "/webhook",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.get(
     "/webhook",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
-        // Your verify token should be a random string that you have previously decided
-        const VERIFY_TOKEN = "kalki";
+        const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN;
 
         // Parse the query params
         let mode = req.query["hub.mode"];

@@ -62,6 +62,7 @@ var telegramRouter = require("./routes/telegram");
 var userRouter = require("./routes/user");
 var a1Router = require("./routes/a1");
 var memoriesRouter = require("./routes/memories");
+const { requireAuth, requirePlatformAdmin } = require("./middleware/auth");
 var { baseQueue, alertsQueue, uxQueue } = require("./services/queue");
 var { upsertNote, getNote } = require("./logic/notes");
 
@@ -90,7 +91,9 @@ app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "hbs");
 
 app.use(logger("dev"));
-app.use(express.json());
+app.use(express.json({
+    verify: (req, res, buf) => { req.rawBody = buf; },
+}));
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
@@ -118,7 +121,7 @@ const { addQueue, removeQueue, setQueues, replaceQueues } = createBullBoard({
     serverAdapter: serverAdapter,
 });
 serverAdapter.setBasePath("/admin/queues");
-app.use("/admin/queues", serverAdapter.getRouter());
+app.use("/admin/queues", requireAuth, requirePlatformAdmin, serverAdapter.getRouter());
 
 const companion = require("@uppy/companion");
 const UPPY_OPTIONS = {
@@ -150,13 +153,14 @@ const UPPY_OPTIONS = {
 };
 const companionApp = companion.app(UPPY_OPTIONS);
 
-console.log("process.env.COMPANION_AWS_ACL", process.env.COMPANION_AWS_ACL);
 
 app.use(
     "/companion",
     cors({
         origin: process.env.COMPANION_CLIENT_ORIGINS.split(","),
+        credentials: true,
     }),
+    requireAuth,
     companionApp
 );
 
@@ -180,12 +184,9 @@ let debounced = {};
 
 const yjsServer = Server.configure({
     async onAuthenticate(data) {
-        const { token: tokenfingerprint, documentName } = data;
+        const { token, documentName } = data;
 
-        const token = tokenfingerprint.split(":::")[0];
-        const fingerprint = tokenfingerprint.split(":::")[1];
-
-        const user = await getUserFromToken({ token, fingerprint });
+        const user = await getUserFromToken({ token });
 
         if (!user) {
             throw new Error("Not authorized!");
