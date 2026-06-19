@@ -183,21 +183,16 @@ app.use(function (err, req, res, next) {
 let debounced = {};
 
 const yjsServer = Server.configure({
-    async onAuthenticate(data) {
-        const { token, documentName, requestHeaders } = data;
+    async onConnect(data) {
+        const { documentName, requestHeaders } = data;
 
-        // Cookie is httpOnly so clients cannot read it from JS. The browser still sends it
-        // on the WebSocket upgrade request — parse it from the request headers directly.
-        let authToken = token;
-        if (!authToken && requestHeaders?.cookie) {
-            const cookieName = process.env.BTW_UUID_KEY || "btw_uuid";
-            const match = requestHeaders.cookie.match(
-                new RegExp(`(?:^|;\\s*)${cookieName}=([^;]+)`)
-            );
-            if (match) authToken = match[1];
-        }
+        const cookieName = process.env.BTW_UUID_KEY || "btw_uuid";
+        const cookieMatch = (requestHeaders?.cookie || "").match(
+            new RegExp(`(?:^|;\\s*)${cookieName}=([^;]+)`)
+        );
+        const token = cookieMatch ? cookieMatch[1] : null;
 
-        const user = await getUserFromToken({ token: authToken });
+        const user = await getUserFromToken({ token });
 
         if (!user) {
             throw new Error("Not authorized!");
