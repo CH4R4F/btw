@@ -93,7 +93,7 @@ router.post(
     }),
     validateLimiter,
     async (req, res) => {
-        const { email, otp, fingerprint } = req.body;
+        const { email, otp } = req.body;
         const isValid = await validateOTP({ email, otp });
 
         if (!isValid) {
@@ -124,7 +124,6 @@ router.post(
         // create a new login token with 30 days expiry time
         const loginToken = await createLoginToken({
             email,
-            fingerprint,
             ip_address,
         });
 

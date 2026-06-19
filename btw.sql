@@ -32,7 +32,7 @@ CREATE TABLE "btw"."login_token" (
     "user_id" int4 NOT NULL,
     "created_at" timestamptz NOT NULL,
     "ip_address" text NOT NULL,
-    "fingerprint" text NOT NULL,
+    "fingerprint" text,
     PRIMARY KEY ("uuid")
 );
 

@@ -11,7 +11,7 @@ COPY package.json /publisher/package.json
 # COPY package-lock.json /publisher/package-lock.json
 
 RUN npm config set unsafe-perm true
-RUN npm install        
+RUN npm install --legacy-peer-deps
 
 RUN npm install pm2@6.0.5 -g
 

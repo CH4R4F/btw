@@ -399,6 +399,7 @@ async function getUserFromToken({ token }) {
         !process.env.ADMIN_OTP
     ) {
         // Single user mode and admin otp is not set. so we return admin user always
+        if (!process.env.ADMIN_EMAIL) return null;
         const { rows } = await tasksDB.query(
             `SELECT * FROM btw.users WHERE email = $1`,
             [process.env.ADMIN_EMAIL.split(",")[0]]
@@ -444,7 +445,7 @@ async function doesLoginTokenExist({ token }) {
 }
 
 // function to create login token for user
-async function createLoginToken({ email, fingerprint, ip_address }) {
+async function createLoginToken({ email, ip_address }) {
     const tasksDB = await db.getTasksDB();
     const client = await tasksDB.connect();
 
@@ -462,8 +463,8 @@ async function createLoginToken({ email, fingerprint, ip_address }) {
 
         // insert the token in DB
         await client.query(
-            `INSERT INTO btw.login_token (uuid, user_id, ip_address, fingerprint, created_at) VALUES ($1, $2, $3, $4, $5)`,
-            [token, user.id, ip_address, fingerprint, new Date()]
+            `INSERT INTO btw.login_token (uuid, user_id, ip_address, created_at) VALUES ($1, $2, $3, $4)`,
+            [token, user.id, ip_address, new Date()]
         );
 
         client.release();

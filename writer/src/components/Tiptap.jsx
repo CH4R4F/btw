@@ -114,7 +114,6 @@ class Tiptap extends React.Component {
           props.usecase ? `.${props.usecase}` : ""
         }`,
         document: ydoc,
-        token: props.token,
         onDisconnect: () => {
           if (!window.yjsConnectionToastId) {
             window.yjsConnectionToastId = toast.loading(`Trying to reconnect`);

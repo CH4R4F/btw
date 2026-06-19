@@ -27,15 +27,12 @@ router.post(
         origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
-        const { fingerprint } = req.body || {};
-
         // get loginToken as btw_uuid cookie
         const loginToken = req.cookies[process.env.BTW_UUID_KEY || "btw_uuid"];
 
         try {
             let user = await getUserFromToken({
                 token: loginToken,
-                fingerprint,
             });
 
             if (
@@ -44,7 +41,6 @@ router.post(
                 !loginToken
             ) {
                 // Single user mode and admin otp is not set and cookie uuid is not present
-                // get ip address and user agent
                 const ip_address =
                     req.headers["x-forwarded-for"] ||
                     req.connection.remoteAddress;
@@ -52,7 +48,6 @@ router.post(
                 // create a new login token with 30 days expiry time
                 const loginToken = await createLoginToken({
                     email: process.env.ADMIN_EMAIL.split(",")[0],
-                    fingerprint,
                     ip_address,
                 });
 
@@ -73,16 +68,11 @@ router.post(
                 !process.env.ADMIN_OTP &&
                 loginToken
             ) {
-                // single user mode. otp is not set. loginToken exists.
-                // check that this logintoken exists. if it doesn't exist, then delete the cookie so that user state will be forced to be reset
-
                 const loginTokenExists = await doesLoginTokenExist({
                     token: loginToken,
-                    fingerprint,
                 });
 
                 if (!loginTokenExists) {
-                    // delete the cookie if user is not logged in
                     res.clearCookie(process.env.BTW_UUID_KEY || "btw_uuid", {
                         httpOnly: true,
                         sameSite: "lax",
@@ -103,8 +93,6 @@ router.post(
                         },
                     });
                     return;
-                } else {
-                    // we are sorted. login token exists
                 }
             }
 
@@ -119,7 +107,6 @@ router.post(
                 }
                 res.json({ success: true, data: { user, isLoggedIn: true } });
             } else {
-                // delete the cookie if user is not logged in
                 res.clearCookie(process.env.BTW_UUID_KEY || "btw_uuid", {
                     httpOnly: true,
                     sameSite: "lax",
@@ -139,7 +126,6 @@ router.post(
             }
         } catch (e) {
             console.log(e);
-            // delete the cookie if user is not logged in
             res.clearCookie(process.env.BTW_UUID_KEY || "btw_uuid", {
                 httpOnly: true,
                 sameSite: "lax",
@@ -177,7 +163,6 @@ router.post(
     }),
     async (req, res) => {
         const {
-            fingerprint,
             name,
             slug,
             bio,
@@ -192,10 +177,7 @@ router.post(
         const token = req.cookies[process.env.BTW_UUID_KEY || "btw_uuid"];
 
         try {
-            const user = await getUserFromToken({
-                token,
-                fingerprint,
-            });
+            const user = await getUserFromToken({ token });
 
             if (!user) {
                 throw new Error("User not found");
@@ -239,16 +221,13 @@ router.post(
         origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
-        const { fingerprint, domain } = req.body || {};
+        const { domain } = req.body || {};
 
         // get loginToken as btw_uuid cookie
         const token = req.cookies[process.env.BTW_UUID_KEY || "btw_uuid"];
 
         try {
-            const user = await getUserFromToken({
-                token,
-                fingerprint,
-            });
+            const user = await getUserFromToken({ token });
 
             if (!user) {
                 throw new Error("User not found");
@@ -286,11 +265,10 @@ router.post(
         origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
-        const { fingerprint } = req.body || {};
         // get loginToken as btw_uuid cookie
         const loginToken = req.cookies[process.env.BTW_UUID_KEY || "btw_uuid"];
         if (loginToken) {
-            await deleteLoginToken({ token: loginToken, fingerprint });
+            await deleteLoginToken({ token: loginToken });
         }
         res.clearCookie(
             process.env.BTW_UUID_KEY || "btw_uuid",
