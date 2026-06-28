@@ -8,14 +8,14 @@ router.options(
     "/get-by-id",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.post(
     "/get-by-id",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
         const { fingerprint, file_id, user_id } = req.body || {};
@@ -57,14 +57,14 @@ router.options(
     "/add-file",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.post(
     "/add-file",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
         const { fingerprint, id, url, user_id, name } = req.body || {};

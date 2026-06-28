@@ -30,28 +30,11 @@ import {
   setNoteSlugFailure,
 } from "actions";
 
-import axios from "axios";
-const axiosInstance = axios.create({
-  timeout: 20000,
-  withCredentials: true,
-});
-
-import genFingerprint from "../fingerprint";
+import api from "../api";
 import toast from "react-hot-toast";
 
-// import FingerprintJS from '@fingerprintjs/fingerprintjs';
-
-async function getFingerPrint() {
-  return genFingerprint();
-  // const fp = await FingerprintJS.load();
-
-  // const { visitorId } = await fp.get();
-
-  // return visitorId;
-}
 
 export function* getNotesSaga({ payload }) {
-  const fingerprint = yield call(getFingerPrint);
 
   const { after } = payload;
 
@@ -67,11 +50,10 @@ export function* getNotesSaga({ payload }) {
   try {
     while (true) {
       const { data: res } = yield call(() =>
-        axiosInstance.request({
+        api.request({
           url: `${process.env.REACT_APP_TASKS_PUBLIC_URL}/notes/get`,
           method: "POST",
           data: {
-            fingerprint,
             after: isInitialFetch ? null : after,
             page,
             limit,
@@ -134,15 +116,13 @@ export function* getNotesSaga({ payload }) {
 }
 
 export function* upsertNote({ html, id, user_id }) {
-  const fingerprint = yield call(getFingerPrint);
 
   try {
     const { data: res } = yield call(() =>
-      axiosInstance.request({
+      api.request({
         url: `${process.env.REACT_APP_TASKS_PUBLIC_URL}/notes/update/html`,
         method: "POST",
         data: {
-          fingerprint,
           id,
           user_id,
           html,
@@ -165,15 +145,13 @@ export function* upsertNote({ html, id, user_id }) {
 
 export function* importNotes({ payload }) {
   const { urls } = payload;
-  const fingerprint = yield call(getFingerPrint);
 
   try {
     const { data: res } = yield call(() =>
-      axiosInstance.request({
+      api.request({
         url: `${process.env.REACT_APP_TASKS_PUBLIC_URL}/notes/import`,
         method: "POST",
         data: {
-          fingerprint,
           urls,
         },
       })
@@ -191,15 +169,13 @@ export function* importNotes({ payload }) {
 
 export function* getNote({ payload }) {
   const { id } = payload;
-  const fingerprint = yield call(getFingerPrint);
 
   try {
     const { data: res } = yield call(() =>
-      axiosInstance.request({
+      api.request({
         url: `${process.env.REACT_APP_TASKS_PUBLIC_URL}/notes/get-by-id`,
         method: "POST",
         data: {
-          fingerprint,
           id,
         },
       })
@@ -236,7 +212,6 @@ export function* getNote({ payload }) {
 
 export function* archiveNote({ payload }) {
   const { id, archive, user_id } = payload;
-  const fingerprint = yield call(getFingerPrint);
 
   const toastId = toast.loading(
     `${archive ? "Archiving" : "Unarchiving"} note...`
@@ -244,12 +219,11 @@ export function* archiveNote({ payload }) {
 
   try {
     const { data: res } = yield call(() =>
-      axiosInstance.request({
+      api.request({
         url: `${process.env.REACT_APP_TASKS_PUBLIC_URL}/notes/update/archive`,
 
         method: "POST",
         data: {
-          fingerprint,
           id,
           archive,
           user_id,
@@ -314,7 +288,6 @@ export function* archiveNote({ payload }) {
 
 export function* deleteNote({ payload }) {
   const { id, delete: deleteAs, user_id, moveToArchive } = payload;
-  const fingerprint = yield call(getFingerPrint);
 
   const toastId = toast.loading(
     `${
@@ -324,12 +297,11 @@ export function* deleteNote({ payload }) {
 
   try {
     const { data: res } = yield call(() =>
-      axiosInstance.request({
+      api.request({
         url: `${process.env.REACT_APP_TASKS_PUBLIC_URL}/notes/update/delete`,
 
         method: "POST",
         data: {
-          fingerprint,
           id,
           delete: deleteAs,
           moveToArchive,
@@ -420,18 +392,16 @@ export function* deleteNote({ payload }) {
 
 export function* setNoteSlug({ payload }) {
   const { id, slug, user_id } = payload;
-  const fingerprint = yield call(getFingerPrint);
 
   const toastId = toast.loading(`Changing the note url...`);
 
   try {
     const { data: res } = yield call(() =>
-      axiosInstance.request({
+      api.request({
         url: `${process.env.REACT_APP_TASKS_PUBLIC_URL}/notes/update/slug`,
 
         method: "POST",
         data: {
-          fingerprint,
           id,
           user_id,
           slug,
@@ -488,7 +458,6 @@ export function* setNoteSlug({ payload }) {
 
 export function* makeNotePrivate({ payload }) {
   const { id, private: privated, user_id } = payload;
-  const fingerprint = yield call(getFingerPrint);
 
   const toastId = toast.loading(
     `${privated ? "Marking the note private" : "Making the note public"}...`
@@ -496,12 +465,11 @@ export function* makeNotePrivate({ payload }) {
 
   try {
     const { data: res } = yield call(() =>
-      axiosInstance.request({
+      api.request({
         url: `${process.env.REACT_APP_TASKS_PUBLIC_URL}/notes/update/private`,
 
         method: "POST",
         data: {
-          fingerprint,
           id,
           private: privated,
           user_id,
@@ -566,7 +534,6 @@ export function* makeNotePrivate({ payload }) {
 
 export function* publishNote({ payload }) {
   const { id, publish, user_id } = payload;
-  const fingerprint = yield call(getFingerPrint);
 
   const toastId = toast.loading(
     `${publish ? "Publishing" : "Unpublishing"} note...`
@@ -574,12 +541,11 @@ export function* publishNote({ payload }) {
 
   try {
     const { data: res } = yield call(() =>
-      axiosInstance.request({
+      api.request({
         url: `${process.env.REACT_APP_TASKS_PUBLIC_URL}/notes/update/publish`,
 
         method: "POST",
         data: {
-          fingerprint,
           id,
           publish,
           user_id,

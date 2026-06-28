@@ -2,7 +2,7 @@ version: "3"
 
 services:
     tasks:
-        platform: linux/amd64
+
         container_name: tasks
         build: ../tasks
         depends_on:
@@ -13,6 +13,7 @@ services:
             - ../tasks/public:/tasks/public
             - ../tasks/routes:/tasks/routes
             - ../tasks/logic:/tasks/logic
+            - ../tasks/middleware:/tasks/middleware
             - ../tasks/utils:/tasks/utils
             - ../tasks/app.js:/tasks/app.js
             - ../tasks/version.js:/tasks/version.js
@@ -58,12 +59,18 @@ services:
             S3_BUCKET:
             S3_KEY:
             S3_SECRET:
-            ADMIN_EMAIL:
-            ADMIN_SLUG:
+            ADMIN_EMAIL: dev@btw.local
+            ADMIN_SLUG: dev
+            ADMIN_OTP: "123456"
+            ADMIN_EMAILS:
+            WHATSAPP_APP_SECRET:
+            WHATSAPP_VERIFY_TOKEN: "53fb55d544edd0cdaef3d9385467eedd20a77f9758da59684a9dadf822638e99"
+            TELEGRAM_WEBHOOK_SECRET: "099220f7c6943365a11457a3c51bd4686464bd268c41917fca8d6fa4fd6b9816"
+            COMPANION_UPLOAD_URLS:
         links:
             - redis
     list:
-        platform: linux/amd64
+
         container_name: list
         build: ../list
         depends_on:
@@ -98,7 +105,7 @@ services:
             REACT_APP_S3_ENDPOINT:
             SECRET: CHANGE THIS AND SET YOUR SECRET
     writer:
-        platform: linux/amd64
+
         container_name: writer
         build: ../writer
         depends_on:
@@ -132,7 +139,7 @@ services:
             REACT_APP_S3_ENDPOINT:
             SECRET: CHANGE THIS AND SET YOUR SECRET
     publisher:
-        platform: linux/amd64
+
         container_name: publisher
         build: ../publisher
         depends_on:
@@ -169,7 +176,7 @@ services:
             ADMIN_SLUG:
     redis:
         # platform: linux/amd64
-        image: "redisfab/redis:6.2.6-arm64v8-bionic"
+        image: "redis:6.2"
         container_name: redis
         ports:
             - "6379:6379"

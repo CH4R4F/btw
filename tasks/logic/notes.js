@@ -4,6 +4,8 @@ const { v4: uuidv4 } = require("uuid");
 const { emailImportComplete } = require("./email");
 const fetch = require("node-fetch");
 const { JSDOM } = require("jsdom");
+const { validateUrl } = require("../middleware/validateUrl");
+const { sanitizeNoteHtml } = require("../middleware/sanitizeNoteHtml");
 const turndown = require("turndown")();
 const axios = require("axios");
 const Y = require('yjs');
@@ -245,7 +247,7 @@ END`;
         updated_at,
         ...(title ? [title] : []),
         ...(json ? [json] : []),
-        ...(hasHTML ? [html.replaceAll("\u0000", "")] : []),
+        ...(hasHTML ? [sanitizeNoteHtml(html.replaceAll("\u0000", ""))] : []),
     ]);
 
     if (ydoc) {
@@ -473,6 +475,12 @@ baseQueue.process("importNote", async (job, done) => {
     const { user_id, jobType, url, email } = job.data;
 
     if (jobType === "import" && url) {
+        try {
+            await validateUrl(url);
+        } catch (e) {
+            done(new Error(`Invalid URL: ${e.message}`));
+            return;
+        }
         // check if the url is for a html file (.html)
         if (url.indexOf(".html") !== -1) {
             try {

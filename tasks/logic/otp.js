@@ -1,4 +1,5 @@
 const db = require("../services/db");
+const crypto = require("crypto");
 
 const { baseQueue } = require("../services/queue");
 
@@ -26,13 +27,10 @@ baseQueue.process("removeOldOTPs", async (job, done) => {
 
 // generate random 6 digit OTP
 function uniqueOTP() {
-    const digits = "0123456789";
     let OTP = "";
-
     for (let i = 0; i < 6; i++) {
-        OTP += digits[Math.floor(Math.random() * 10)];
+        OTP += crypto.randomInt(0, 10).toString();
     }
-
     return OTP;
 }
 
@@ -48,16 +46,13 @@ async function generateOTP({ email }) {
     const tasksDB = await db.getTasksDB();
     const client = await tasksDB.connect();
 
-    // check if there is an OTP for this email id that is already present in DB
-    const { rows } = await client.query(
-        `SELECT * FROM btw.otp WHERE processed_email = $1`,
+    // delete any existing OTP for this email so each request gets a fresh one
+    await client.query(
+        `DELETE FROM btw.otp WHERE processed_email = $1`,
         [(email || "").toLowerCase().split(".").join("")]
     );
 
-    if (rows.length > 0) {
-        client.release();
-        return rows[0].otp;
-    } else {
+    {
         // generate a new OTP until the newly generated OTP is not present in DB
         let newOTP = uniqueOTP();
         while (true) {
@@ -104,19 +99,23 @@ async function validateOTP({ email, otp }) {
     const tasksDB = await db.getTasksDB();
     const client = await tasksDB.connect();
 
-    // check if there is an OTP for this email id that is already present in DB
     const { rows } = await client.query(
         `SELECT * FROM btw.otp WHERE processed_email = $1 AND otp = $2`,
         [(email || "").toLowerCase().split(".").join(""), otp]
     );
 
-    client.release();
-
     if (rows.length > 0) {
+        client.release();
         return true;
-    } else {
-        return false;
     }
+
+    // invalidate OTP after a failed attempt to prevent brute force
+    await client.query(
+        `DELETE FROM btw.otp WHERE processed_email = $1`,
+        [(email || "").toLowerCase().split(".").join("")]
+    );
+    client.release();
+    return false;
 }
 
 async function deleteOTP({ email }) {

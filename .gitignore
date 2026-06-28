@@ -37,3 +37,4 @@ deployment/.DS_Store
 
 cors-config.json
 migration_*.sql
+.env

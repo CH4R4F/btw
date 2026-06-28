@@ -1,6 +1,7 @@
 var express = require("express");
 const { alertsQueue, baseQueue, uxQueue } = require("../services/queue");
 const db = require("../services/db");
+const { requireAuth, requirePlatformAdmin } = require("../middleware/auth");
 var router = express.Router();
 
 const {
@@ -775,7 +776,7 @@ alertsQueue.process("markCompletedReminders", async (job, done) => {
     done();
 });
 
-router.get("/admin/run-add-missing-recurring-alerts", async (req, res) => {
+router.get("/admin/run-add-missing-recurring-alerts", requireAuth, requirePlatformAdmin, async (req, res) => {
     const { user_id, reminder_id } = req.query || {};
 
     if (!user_id || !reminder_id) {

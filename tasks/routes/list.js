@@ -1,7 +1,15 @@
 var express = require("express");
 var router = express.Router();
 var cors = require("cors");
+var rateLimit = require("express-rate-limit");
 var { getUserFromToken, doesLoginTokenExist } = require("../logic/user");
+
+const searchLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 30,
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 var {
     getList,
     getPublicNote,
@@ -16,6 +24,7 @@ const TurndownService = require("turndown");
 const showdown = require("showdown");
 const showdownConverter = new showdown.Converter();
 const { tiptapExtensions } = require("../logic/tiptapExtensions");
+const { validateUrl } = require("../middleware/validateUrl");
 const db = require("../services/db");
 const { v4: uuidv4 } = require("uuid");
 const { upsertNote } = require("../logic/notes");
@@ -26,14 +35,14 @@ router.options(
     "/pinned",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.post(
     "/pinned",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
         const { fingerprint } = req.body || {};
@@ -74,14 +83,14 @@ router.options(
     "/get",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.post(
     "/get",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
         const {
@@ -166,14 +175,14 @@ router.options(
     "/update",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.post(
     "/update",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
         const { nodes, fingerprint } = req.body || {};
@@ -240,7 +249,7 @@ router.post(
     }
 );
 
-function shortHash(x, key, length = 5) {
+function shortHash(x, key, length = 16) {
     const hmac = crypto.createHmac("sha256", key);
     hmac.update(x);
     const digest = hmac.digest("base64");
@@ -258,14 +267,14 @@ router.options(
     "/public/list",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.post(
     "/public/list",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
         const { id, hash } = req.body;
@@ -292,7 +301,7 @@ router.post(
             const hashToCompare = shortHash(
                 `${node.id}-${node.note_id}-${node.user_id}-list`,
                 process.env.ENCRYPTION_KEY,
-                10
+                16
             );
 
             if (hashToCompare !== hash) {
@@ -322,7 +331,7 @@ router.post(
                 node.shareUrl = `/public/list/${node.id}/${shortHash(
                     `${node.id}-${node.note_id}-${node.user_id}-list`,
                     process.env.ENCRYPTION_KEY,
-                    10
+                    16
                 )}`;
             });
 
@@ -358,14 +367,14 @@ router.options(
     "/public/note",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.post(
     "/public/note",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
         const { id, hash } = req.body;
@@ -392,17 +401,25 @@ router.options(
     "/search",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.post(
     "/search",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
+    searchLimiter,
     async (req, res) => {
-        const { fingerprint, query, limit = 50, page = 1 } = req.body || {};
+        const { fingerprint, query, limit: rawLimit = 50, page: rawPage = 1 } = req.body || {};
+
+        if (typeof query === "string" && query.length > 500) {
+            return res.status(400).json({ success: false, error: "Query too long" });
+        }
+
+        const limit = Math.min(Math.max(1, parseInt(rawLimit, 10) || 50), 200);
+        const page = Math.max(1, parseInt(rawPage, 10) || 1);
 
         const loginToken = req.cookies[process.env.BTW_UUID_KEY || "btw_uuid"];
 
@@ -471,19 +488,25 @@ router.options(
     "/utils/readable",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.post(
     "/utils/readable",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
         const { url } = req.body || {};
         if (!url) {
             res.json({ success: false, error: "Missing URL" });
+            return;
+        }
+        try {
+            await validateUrl(url);
+        } catch (e) {
+            res.status(400).json({ success: false, error: e.message });
             return;
         }
         try {
@@ -502,14 +525,14 @@ router.options(
     "/api/child/add/:id/:hash",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.post(
     "/api/child/add/:id/:hash",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
         const { id, hash } = req.params || {};

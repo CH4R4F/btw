@@ -364,16 +364,21 @@ router.options(
     "/webhook",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.post(
     "/webhook",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
     async (req, res) => {
+        const secret = req.headers["x-telegram-bot-api-secret-token"];
+        if (!process.env.TELEGRAM_WEBHOOK_SECRET || secret !== process.env.TELEGRAM_WEBHOOK_SECRET) {
+            return res.sendStatus(403);
+        }
+
         console.log(JSON.stringify(req.body));
 
         console.log("1");

@@ -1,24 +1,42 @@
 var express = require("express");
 var router = express.Router();
 var cors = require("cors");
+var rateLimit = require("express-rate-limit");
 var { generateOTP, validateOTP, deleteOTP } = require("../logic/otp");
 var { createUser, createLoginToken } = require("../logic/user");
 var { emailOTP } = require("../logic/email");
+
+const generateLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, error: "Too many OTP requests, try again later" },
+});
+
+const validateLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, error: "Too many validation attempts, try again later" },
+});
 
 // create an api to generate otp
 router.options(
     "/generate",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.post(
     "/generate",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
+    generateLimiter,
     async (req, res) => {
         let { email } = req.body;
 
@@ -64,17 +82,18 @@ router.options(
     "/validate",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     })
 );
 router.post(
     "/validate",
     cors({
         credentials: true,
-        origin: process.env.CORS_DOMAINS.split(","),
+        origin: (process.env.CORS_DOMAINS || "").split(",").filter(Boolean),
     }),
+    validateLimiter,
     async (req, res) => {
-        const { email, otp, fingerprint } = req.body;
+        const { email, otp } = req.body;
         const isValid = await validateOTP({ email, otp });
 
         if (!isValid) {
@@ -105,18 +124,18 @@ router.post(
         // create a new login token with 30 days expiry time
         const loginToken = await createLoginToken({
             email,
-            fingerprint,
             ip_address,
         });
 
         // set the login token in the cookie on the root domain (so that it can be accessed by all subdomains)
         res.cookie(process.env.BTW_UUID_KEY || "btw_uuid", loginToken, {
             maxAge: 1000 * 60 * 60 * 24 * 30,
+            httpOnly: true,
+            sameSite: "lax",
             ...(process.env.NODE_ENV === "production"
                 ? {
                       domain: `.${process.env.ROOT_DOMAIN}`,
                       secure: true,
-                      //   httpOnly: true,
                   }
                 : {}),
         });
